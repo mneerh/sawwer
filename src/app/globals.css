@@ -1,0 +1,231 @@
+@import "tailwindcss";
+
+/* ------------------------------------------------------------------
+   Thmanyah typeface — https://thmanyah.com
+   Files live in /public/fonts (woff2). License: /public/fonts/THMANYAH-LICENSE.pdf
+   Three families are used:
+     - Thmanyah Sans          → UI, labels, buttons
+     - Thmanyah Serif Text    → narrative body copy (editorial feel)
+     - Thmanyah Serif Display → headlines
+------------------------------------------------------------------ */
+
+@font-face {
+  font-family: "Thmanyah";
+  src: url("/fonts/thmanyahsans-Light.woff2") format("woff2");
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Thmanyah";
+  src: url("/fonts/thmanyahsans-Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Thmanyah";
+  src: url("/fonts/thmanyahsans-Medium.woff2") format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Thmanyah";
+  src: url("/fonts/thmanyahsans-Bold.woff2") format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Thmanyah";
+  src: url("/fonts/thmanyahsans-Black.woff2") format("woff2");
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Thmanyah Serif";
+  src: url("/fonts/thmanyahseriftext-Light.woff2") format("woff2");
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Thmanyah Serif";
+  src: url("/fonts/thmanyahseriftext-Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Thmanyah Serif";
+  src: url("/fonts/thmanyahseriftext-Medium.woff2") format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Thmanyah Serif";
+  src: url("/fonts/thmanyahseriftext-Bold.woff2") format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Thmanyah Display";
+  src: url("/fonts/thmanyahserifdisplay-Light.woff2") format("woff2");
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Thmanyah Display";
+  src: url("/fonts/thmanyahserifdisplay-Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Thmanyah Display";
+  src: url("/fonts/thmanyahserifdisplay-Medium.woff2") format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Thmanyah Display";
+  src: url("/fonts/thmanyahserifdisplay-Bold.woff2") format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Thmanyah Display";
+  src: url("/fonts/thmanyahserifdisplay-Black.woff2") format("woff2");
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@theme {
+  /* Earthy Saudi palette */
+  --color-green: #006c35;
+  --color-green-deep: #064e35;
+  --color-green-soft: #2f7d58;
+  --color-sand: #d9c5a4;
+  --color-sand-light: #f3ebdd;
+  --color-sand-mid: #e8dcc6;
+  --color-shell: #faf8f3;
+  --color-terracotta: #b66a45;
+  --color-clay: #99634b;
+  --color-ink: #2e2925;
+  --color-ink-soft: #5c534b;
+  --color-ink-faint: #8b8078;
+  --color-sage: #a8b5a2;
+  --color-gold: #c5a15a;
+
+  --font-sans: "Thmanyah", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Thmanyah Serif", "Thmanyah", ui-serif, Georgia, serif;
+  --font-display: "Thmanyah Display", "Thmanyah Serif", ui-serif, Georgia, serif;
+
+  --radius-card: 0.75rem;
+
+  --animate-rise: rise 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
+  --animate-fade-in: fade-in 1.2s ease both;
+  --animate-drift: drift 14s ease-in-out infinite;
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(22px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes drift {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1.04);
+  }
+  50% {
+    transform: translate3d(0, -1.5%, 0) scale(1.08);
+  }
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+body {
+  background-color: var(--color-shell);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  font-weight: 400;
+  text-rendering: optimizeLegibility;
+}
+
+/* Arabic numerals stay latin for a cleaner editorial look in both locales */
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Reveal-on-scroll primitive (see useReveal) */
+.reveal {
+  opacity: 0;
+  transform: translateY(26px);
+  transition:
+    opacity 0.9s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.9s cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: opacity, transform;
+}
+.reveal[data-visible="true"] {
+  opacity: 1;
+  transform: none;
+}
+
+::selection {
+  background: var(--color-sand);
+  color: var(--color-ink);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-green);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+/* Thin, warm scrollbar */
+* {
+  scrollbar-color: var(--color-sand) transparent;
+  scrollbar-width: thin;
+}
