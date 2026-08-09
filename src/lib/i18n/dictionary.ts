@@ -91,6 +91,14 @@ export const ar = {
     photos: (n: number) => `${n} ${n === 1 ? "صورة" : "صور"}`,
     rename: "تعديل الاسم",
     removePlace: "حذف المحطة",
+    noTime: "الوقت غير متوفر",
+    noDate: "ما لقينا تاريخ في بيانات الصور.",
+    days: (n: number) => `${n} أيام`,
+    dayLabel: (n: number) =>
+      `اليوم ${n === 1 ? "الأول" : n === 2 ? "الثاني" : n === 3 ? "الثالث" : n === 4 ? "الرابع" : n === 5 ? "الخامس" : n}`,
+    unnamedPlace: "مكان غير محدد",
+    withoutTime: (n: number) =>
+      `${n} ${n === 1 ? "صورة" : "صور"} بدون وقت في بياناتها — حافظنا على ترتيب رفعها.`,
     unplaced: (n: number) => `${n} ${n === 1 ? "صورة" : "صور"} بدون مكان محدد — سنضمها للرحلة.`,
     addPlace: "إضافة محطة",
     newPlace: "اسم المكان",
@@ -106,8 +114,9 @@ export const ar = {
     source: "المصدر",
     openInMaps: "افتح في خرائط جوجل",
     mapTitle: "رحلتك على الخريطة",
-    mapSubtitle: "المحطات كما مررت بها.",
-    mapFallbackNote: "خريطة توضيحية — المواقع الحقيقية تفتح في خرائط جوجل.",
+    mapSubtitle: "المحطات التي صنعت رحلتك.",
+    openRoute: "افتح المسار في خرائط جوجل",
+    goToStop: "اذهب إلى هذه المحطة",
     stopLabel: "المحطة",
     endTitle: "وهنا انتهت الرحلة،",
     endTitle2: "لكن صورها ما زالت تحكي.",
@@ -122,6 +131,10 @@ export const ar = {
     demoBadge: "محتوى عرض توضيحي",
     demoNote: "هذه الرحلة أُنشئت بمحتوى تجريبي لأن مفاتيح الذكاء الاصطناعي غير مهيأة.",
     uncertainStop: "مكان غير مؤكد",
+    noTime: "الوقت غير متوفر",
+    unnamedPlace: "مكان غير محدد",
+    dayLabel: (n: number) =>
+      `اليوم ${n === 1 ? "الأول" : n === 2 ? "الثاني" : n === 3 ? "الثالث" : n === 4 ? "الرابع" : n === 5 ? "الخامس" : n}`,
   },
 
   ask: {
@@ -255,6 +268,13 @@ export const en: Dictionary = {
     photos: (n: number) => `${n} photo${n === 1 ? "" : "s"}`,
     rename: "Edit name",
     removePlace: "Remove stop",
+    noTime: "Time unavailable",
+    noDate: "No date found in the photo metadata.",
+    days: (n: number) => `${n} days`,
+    dayLabel: (n: number) => `Day ${n}`,
+    unnamedPlace: "Unidentified place",
+    withoutTime: (n: number) =>
+      `${n} photo${n === 1 ? "" : "s"} carried no time — we kept your upload order for ${n === 1 ? "it" : "them"}.`,
     unplaced: (n: number) => `${n} photo${n === 1 ? "" : "s"} without a clear place — we'll still include them.`,
     addPlace: "Add a stop",
     newPlace: "Place name",
@@ -270,8 +290,9 @@ export const en: Dictionary = {
     source: "Source",
     openInMaps: "Open in Google Maps",
     mapTitle: "Your journey on the map",
-    mapSubtitle: "The stops, in the order you walked them.",
-    mapFallbackNote: "Illustrative map — real locations open in Google Maps.",
+    mapSubtitle: "The stops that made your trip.",
+    openRoute: "Open the route in Google Maps",
+    goToStop: "Go to this stop",
     stopLabel: "Stop",
     endTitle: "And here the journey ended,",
     endTitle2: "but the photos are still telling it.",
@@ -286,6 +307,9 @@ export const en: Dictionary = {
     demoBadge: "Demo content",
     demoNote: "This journey was built from sample content because AI credentials aren't configured.",
     uncertainStop: "Unconfirmed place",
+    noTime: "Time unavailable",
+    unnamedPlace: "Unidentified place",
+    dayLabel: (n: number) => `Day ${n}`,
   },
 
   ask: {

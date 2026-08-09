@@ -1,12 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { Fragment, useCallback, useEffect, useState } from "react";
 
 import { AskPanel } from "@/components/journey/AskPanel";
 import { JourneyEnding } from "@/components/journey/JourneyEnding";
 import { JourneyHero } from "@/components/journey/JourneyHero";
-import { StopSection } from "@/components/journey/StopSection";
+import { DayDivider, StopSection } from "@/components/journey/StopSection";
 import { JourneyMap } from "@/components/map/JourneyMap";
 import { useLanguage } from "@/lib/i18n/context";
 import { getJourney } from "@/lib/storage/journeys";
@@ -64,13 +64,20 @@ export function JourneyExperience({ journeyId }: { journeyId: string }) {
     );
   }
 
+  const multiDay = new Set(journey.stops.map((stop) => stop.dayNumber)).size > 1;
+
   return (
     <>
       <article>
         <JourneyHero journey={journey} />
 
-        {journey.stops.map((stop) => (
-          <StopSection key={stop.id} stop={stop} />
+        {journey.stops.map((stop, index) => (
+          <Fragment key={stop.id}>
+            {multiDay && stop.dayNumber !== journey.stops[index - 1]?.dayNumber && (
+              <DayDivider dayNumber={stop.dayNumber} date={stop.date} />
+            )}
+            <StopSection stop={stop} />
+          </Fragment>
         ))}
 
         <JourneyMap journey={journey} onSelectStop={focusStop} />

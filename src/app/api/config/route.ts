@@ -14,7 +14,9 @@ export async function GET() {
   return NextResponse.json({
     ai: isAiConfigured(),
     places: isPlacesConfigured(),
-    maps: Boolean(process.env.GOOGLE_MAPS_API_KEY),
+    // The map is OpenStreetMap + Leaflet. It has no credential to report —
+    // it works identically whether or not anything else is configured.
+    map: "openstreetmap",
     demoMode: !isAiConfigured(),
   });
 }

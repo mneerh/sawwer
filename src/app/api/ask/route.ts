@@ -52,15 +52,17 @@ function serializeJourney(journey: Journey): string {
   const lines = [
     `TITLE: ${journey.title}`,
     `DESTINATION: ${journey.destination}`,
-    journey.date ? `DATE: ${journey.date}` : "",
+    journey.date ? `DATE: ${journey.date}${journey.endDate && journey.endDate !== journey.date ? ` to ${journey.endDate}` : ""}` : "",
     `INTRO: ${journey.shortIntro}`,
     "",
-    "STOPS:",
+    "STOPS (in order, times read from the photographs' own metadata):",
   ].filter(Boolean);
 
   for (const stop of journey.stops) {
     lines.push(
-      `[${stop.id}] #${stop.order} ${stop.placeName} — ${stop.location}`,
+      `[${stop.id}] #${stop.order} ${stop.placeName || "unidentified place"} — ${stop.location}`,
+      `  day: ${stop.dayNumber}${stop.date ? ` (${stop.date})` : ""}`,
+      `  time: ${stop.displayTime ?? "unknown — the photo carried no timestamp, do not guess one"}`,
       `  title: ${stop.title}`,
       `  narrative: ${stop.narrative}`,
       `  verifiedFact: ${stop.verifiedFact ?? "none"}`,

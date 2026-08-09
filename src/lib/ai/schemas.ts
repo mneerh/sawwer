@@ -8,10 +8,52 @@ import { z } from "zod";
  */
 
 /* ------------------------------------------------------------------ */
+/* Stage 0 — photo metadata (extracted in the browser, before Gemini)   */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Where a photo's timestamp came from, in descending order of trust.
+ * This is carried all the way to the UI so a time is never shown with more
+ * authority than its source deserves.
+ */
+export const MetadataSourceSchema = z.enum([
+  "exif_datetime_original",
+  "exif_create_date",
+  "file_metadata",
+  "upload_order",
+]);
+export type MetadataSource = z.infer<typeof MetadataSourceSchema>;
+
+export const ImageMetadataSchema = z.object({
+  imageId: z.string(),
+  fileName: z.string(),
+  /**
+   * Local wall-clock time exactly as the camera recorded it:
+   * "YYYY-MM-DDTHH:mm:ss", deliberately with no timezone suffix.
+   * EXIF carries no zone, so converting to UTC would invent information and
+   * shift the time the traveller actually experienced.
+   */
+  capturedAt: z.string().nullable(),
+  captureDate: z.string().nullable(),
+  captureTime: z.string().nullable(),
+  /** From EXIF OffsetTimeOriginal when present, e.g. "+03:00". Display only. */
+  timezone: z.string().nullable(),
+  latitude: z.number().nullable(),
+  longitude: z.number().nullable(),
+  metadataSource: MetadataSourceSchema,
+  /** True only when capturedAt came from a trustworthy capture-time source. */
+  hasReliableTimestamp: z.boolean(),
+  /** Position in the user's original selection — the last-resort ordering key. */
+  uploadIndex: z.number().int(),
+});
+export type ImageMetadata = z.infer<typeof ImageMetadataSchema>;
+
+/* ------------------------------------------------------------------ */
 /* Stage 1 — multimodal image understanding                            */
 /* ------------------------------------------------------------------ */
 
-export const ImageAnalysisSchema = z.object({
+/** Exactly what Gemini is asked to return about a single photograph. */
+export const ImageObservationSchema = z.object({
   imageId: z.string(),
   possiblePlace: z.string().nullable(),
   possibleLandmark: z.string().nullable(),
@@ -23,13 +65,22 @@ export const ImageAnalysisSchema = z.object({
   /** 0–1. Below UNCERTAIN_THRESHOLD the place is shown to the user as unconfirmed. */
   confidence: z.number().min(0).max(1),
 });
+export type ImageObservation = z.infer<typeof ImageObservationSchema>;
+
+/**
+ * The model's observation joined back to the photo's own metadata. The
+ * metadata is never discarded after analysis — it is what orders the journey.
+ */
+export const ImageAnalysisSchema = ImageObservationSchema.extend({
+  metadata: ImageMetadataSchema,
+});
 export type ImageAnalysis = z.infer<typeof ImageAnalysisSchema>;
 
-export const AnalysisResultSchema = z.object({
-  images: z.array(ImageAnalysisSchema),
+export const ObservationResultSchema = z.object({
+  images: z.array(ImageObservationSchema),
   probableDestination: z.string().nullable(),
 });
-export type AnalysisResult = z.infer<typeof AnalysisResultSchema>;
+export type ObservationResult = z.infer<typeof ObservationResultSchema>;
 
 /** Below this, we never present the model's guess as a fact. */
 export const UNCERTAIN_THRESHOLD = 0.55;
@@ -90,8 +141,30 @@ export const JourneyStopSchema = z.object({
   coordinates: CoordinatesSchema.nullable(),
   googleMapsUrl: z.string().nullable(),
   confidence: z.number().min(0).max(1),
+
+  /* --- chronology, derived from photo metadata and never from the model --- */
+
+  /** Earliest capture time in the stop, local wall clock. null when unknown. */
+  capturedAt: z.string().nullable().default(null),
+  /** Last capture time in the stop — the stop's span, when more than one photo. */
+  endedAt: z.string().nullable().default(null),
+  /** "HH:mm" 24h local. The UI localises it; this stays machine-readable. */
+  displayTime: z.string().nullable().default(null),
+  /** "YYYY-MM-DD" of the stop, when any photo in it carries a date. */
+  date: z.string().nullable().default(null),
+  /** 1-based day of the trip. Always 1 for a single-day journey. */
+  dayNumber: z.number().int().default(1),
+  /** Highest-trust metadata source among this stop's photos. */
+  timeSource: MetadataSourceSchema.default("upload_order"),
 });
 export type JourneyStop = z.infer<typeof JourneyStopSchema>;
+
+export const JourneyDaySchema = z.object({
+  dayNumber: z.number().int(),
+  date: z.string().nullable(),
+  stopIds: z.array(z.string()),
+});
+export type JourneyDay = z.infer<typeof JourneyDaySchema>;
 
 export const JourneySummarySchema = z.object({
   numberOfPhotos: z.number().int(),
@@ -113,7 +186,12 @@ export const JourneySchema = z.object({
   id: z.string(),
   title: z.string(),
   destination: z.string(),
+  /** First capture date of the trip — from the photos, never from "today". */
   date: z.string().nullable(),
+  /** Last capture date. Equal to `date` for a single-day trip. */
+  endDate: z.string().nullable().default(null),
+  /** Chronological day buckets. A single-day trip has exactly one. */
+  days: z.array(JourneyDaySchema).default([]),
   coverImageId: z.string().nullable(),
   shortIntro: z.string(),
   stops: z.array(JourneyStopSchema),
@@ -126,9 +204,13 @@ export const JourneySchema = z.object({
 export type Journey = z.infer<typeof JourneySchema>;
 
 /**
- * What Gemini is asked to return for the journey composition step —
- * ids, coordinates and sources are attached by our own code afterwards,
- * so the model is never asked to invent a URL or a lat/lng.
+ * What Gemini is asked to return for the journey composition step.
+ *
+ * Note what is *absent*: order, grouping, times and image assignment. Those
+ * are computed from photo metadata before the model is called, and the model
+ * is handed the finished stop list to write about. Ids, coordinates and
+ * sources are attached by our own code afterwards, so the model is never asked
+ * to invent a URL, a lat/lng, or a chronology.
  */
 export const JourneyDraftSchema = z.object({
   title: z.string(),
@@ -136,11 +218,9 @@ export const JourneyDraftSchema = z.object({
   shortIntro: z.string(),
   stops: z.array(
     z.object({
-      placeName: z.string(),
-      location: z.string(),
+      stopId: z.string(),
       title: z.string(),
       narrative: z.string(),
-      imageIds: z.array(z.string()).default([]),
     }),
   ),
   closingText: z.string(),
@@ -152,6 +232,10 @@ export type JourneyDraft = z.infer<typeof JourneyDraftSchema>;
 /* Review step + Ask-about-my-trip                                     */
 /* ------------------------------------------------------------------ */
 
+/**
+ * A candidate stop shown on the review screen. Already grouped and already in
+ * chronological order — the user is confirming places, not sequence.
+ */
 export const DetectedPlaceSchema = z.object({
   id: z.string(),
   name: z.string(),
@@ -159,6 +243,11 @@ export const DetectedPlaceSchema = z.object({
   imageIds: z.array(z.string()),
   confidence: z.number(),
   uncertain: z.boolean(),
+  capturedAt: z.string().nullable().default(null),
+  displayTime: z.string().nullable().default(null),
+  date: z.string().nullable().default(null),
+  dayNumber: z.number().int().default(1),
+  timeSource: MetadataSourceSchema.default("upload_order"),
 });
 export type DetectedPlace = z.infer<typeof DetectedPlaceSchema>;
 

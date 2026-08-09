@@ -1,5 +1,8 @@
 "use client";
 
+import type { ImageMetadata } from "@/lib/ai/schemas";
+import { extractMetadata } from "@/lib/metadata";
+
 export const ACCEPTED_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"] as const;
 export const MAX_FILES = 12;
 export const MAX_FILE_BYTES = 20 * 1024 * 1024;
@@ -18,13 +21,19 @@ export type PreparedImage = {
   analysisMimeType: string;
   previewUrl: string;
   fileName: string;
+  /** Read from the ORIGINAL file, before the canvas re-encode strips EXIF. */
+  metadata: ImageMetadata;
 };
 
 export function isAcceptedType(file: File): boolean {
   return (ACCEPTED_TYPES as readonly string[]).includes(file.type);
 }
 
-export async function prepareImage(file: File, imageId: string): Promise<PreparedImage> {
+export async function prepareImage(file: File, imageId: string, uploadIndex: number): Promise<PreparedImage> {
+  // Metadata first, and from the File itself: everything below re-encodes
+  // through a canvas, which discards the EXIF segment entirely.
+  const metadata = await extractMetadata(file, imageId, uploadIndex);
+
   const bitmap = await loadBitmap(file);
 
   try {
@@ -38,6 +47,7 @@ export async function prepareImage(file: File, imageId: string): Promise<Prepare
       analysisMimeType: "image/jpeg",
       previewUrl: URL.createObjectURL(stored),
       fileName: file.name,
+      metadata,
     };
   } finally {
     bitmap.close?.();

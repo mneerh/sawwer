@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 
 import { runAnalysis } from "@/lib/ai/pipeline";
+import { ImageMetadataSchema } from "@/lib/ai/schemas";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -17,6 +18,8 @@ const RequestSchema = z.object({
     )
     .min(1)
     .max(12),
+  /** Extracted in the browser from the original files, before any re-encoding. */
+  metadata: z.array(ImageMetadataSchema).max(12),
   tripHint: z.string().max(200).nullable().optional(),
 });
 
@@ -36,6 +39,7 @@ export async function POST(request: Request) {
   try {
     const outcome = await runAnalysis({
       images: parsed.data.images,
+      metadata: parsed.data.metadata,
       tripHint: parsed.data.tripHint ?? null,
     });
     return NextResponse.json(outcome);

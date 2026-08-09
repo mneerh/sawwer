@@ -4,6 +4,7 @@ import { JourneyImage } from "@/components/media/JourneyImage";
 import { VerifiedFact } from "@/components/journey/VerifiedFact";
 import { Reveal } from "@/components/ui/Reveal";
 import { UNCERTAIN_THRESHOLD, type JourneyStop } from "@/lib/ai/schemas";
+import { formatDayDate, formatTime } from "@/lib/datetime";
 import { useLanguage } from "@/lib/i18n/context";
 
 /**
@@ -28,18 +29,33 @@ export function StopSection({ stop }: { stop: JourneyStop }) {
 /* ------------------------------ shared bits ----------------------------- */
 
 function StopLabel({ stop, tone = "light" }: { stop: JourneyStop; tone?: "light" | "dark" }) {
-  const { t } = useLanguage();
+  const { t, locale } = useLanguage();
   const dark = tone === "dark";
   const uncertain = stop.confidence < UNCERTAIN_THRESHOLD;
+  const time = formatTime(stop.capturedAt, locale);
 
   return (
     <div className="flex flex-wrap items-baseline gap-x-4 gap-y-2">
-      <span className={`font-display text-[2.1rem] leading-none tabular ${dark ? "text-shell/35" : "text-sand"}`}>
-        {String(stop.order).padStart(2, "0")}
+      {/* The capture time leads, with the ordinal beneath it — the sequence the
+          reader sees is the sequence the camera recorded. */}
+      <span className="shrink-0">
+        <span
+          className={`block font-display leading-none tabular ${
+            time
+              ? `text-[1.7rem] ${dark ? "text-gold" : "text-green-deep"}`
+              : `text-[0.78rem] ${dark ? "text-shell/45" : "text-ink-faint/80"}`
+          }`}
+        >
+          {time ?? t.journey.noTime}
+        </span>
+        <span className={`mt-1.5 block text-[0.7rem] tracking-[0.2em] tabular ${dark ? "text-shell/30" : "text-sand"}`}>
+          {String(stop.order).padStart(2, "0")}
+        </span>
       </span>
+
       <div>
         <h2 className={`font-display text-[clamp(1.6rem,3.6vw,2.5rem)] leading-tight ${dark ? "text-shell" : "text-ink"}`}>
-          {stop.placeName}
+          {stop.placeName || t.journey.unnamedPlace}
         </h2>
         <p className={`mt-1.5 text-[0.8rem] tracking-wide ${dark ? "text-shell/55" : "text-ink-faint"}`}>
           {stop.location}
@@ -50,6 +66,21 @@ function StopLabel({ stop, tone = "light" }: { stop: JourneyStop; tone?: "light"
           )}
         </p>
       </div>
+    </div>
+  );
+}
+
+/** Divider between trip days. Only rendered when a journey spans more than one. */
+export function DayDivider({ dayNumber, date }: { dayNumber: number; date: string | null }) {
+  const { t, locale } = useLanguage();
+  const label = formatDayDate(date, locale);
+
+  return (
+    <div className="border-y border-sand/60 bg-sand-light/60 py-10">
+      <Reveal className="mx-auto max-w-6xl px-5 sm:px-8">
+        <p className="text-[0.72rem] uppercase tracking-[0.3em] text-clay">{t.journey.dayLabel(dayNumber)}</p>
+        {label && <p className="mt-3 font-display text-[clamp(1.5rem,3.4vw,2.2rem)] text-ink">{label}</p>}
+      </Reveal>
     </div>
   );
 }
@@ -223,19 +254,25 @@ function Detail({ stop }: { stop: JourneyStop }) {
             <Narrative stop={stop} />
           </div>
 
-          <div className="mt-9 rounded-lg border border-sand/70 p-6">
-            <p className="text-[0.72rem] uppercase tracking-[0.22em] text-clay">{t.journey.stopLabel}</p>
-            <p className="mt-3 font-display text-[1.2rem] text-ink">{stop.placeName}</p>
-            <p className="mt-1 text-[0.84rem] text-ink-faint">{stop.location}</p>
-            {stop.coordinates && (
-              <p className="mt-3 text-[0.76rem] text-ink-faint/80 tabular" dir="ltr">
-                {stop.coordinates.lat.toFixed(4)}, {stop.coordinates.lng.toFixed(4)}
+          {/* Only worth a card when there is something in it — an unidentified
+              stop with no coordinates would otherwise render an empty box. */}
+          {(stop.placeName || stop.location || stop.coordinates) && (
+            <div className="mt-9 rounded-lg border border-sand/70 p-6">
+              <p className="text-[0.72rem] uppercase tracking-[0.22em] text-clay">{t.journey.stopLabel}</p>
+              <p className={`mt-3 font-display text-[1.2rem] ${stop.placeName ? "text-ink" : "text-ink-faint"}`}>
+                {stop.placeName || t.journey.unnamedPlace}
               </p>
-            )}
-            <div className="mt-4">
-              <MapsLink stop={stop} />
+              {stop.location && <p className="mt-1 text-[0.84rem] text-ink-faint">{stop.location}</p>}
+              {stop.coordinates && (
+                <p className="mt-3 text-[0.76rem] text-ink-faint/80 tabular" dir="ltr">
+                  {stop.coordinates.lat.toFixed(4)}, {stop.coordinates.lng.toFixed(4)}
+                </p>
+              )}
+              <div className="mt-4">
+                <MapsLink stop={stop} />
+              </div>
             </div>
-          </div>
+          )}
 
           {stop.verifiedFact && (
             <div className="mt-8">

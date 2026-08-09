@@ -14,11 +14,11 @@ import {
   PLACE_RESOLUTION_SYSTEM,
 } from "@/lib/ai/prompts";
 import {
-  AnalysisResultSchema,
+  ObservationResultSchema,
   AskAnswerSchema,
   JourneyDraftSchema,
   PlaceDetailsSchema,
-  type AnalysisResult,
+  type ObservationResult,
   type AskAnswer,
   type GroundedFact,
   type JourneyDraft,
@@ -27,7 +27,7 @@ import {
 } from "@/lib/ai/schemas";
 import { getPlaceDetails } from "@/lib/google/places";
 
-export const MODEL = "gemini-2.5-flash";
+export const MODEL = "gemini-3.6-flash";
 
 let client: GoogleGenAI | null = null;
 
@@ -87,13 +87,13 @@ const journeyResponseSchema: Schema = {
       items: {
         type: Type.OBJECT,
         properties: {
-          placeName: { type: Type.STRING },
-          location: { type: Type.STRING },
+          // Echoed back so we can match writing to the stop we computed.
+          // Order, grouping and images are not the model's to decide.
+          stopId: { type: Type.STRING },
           title: { type: Type.STRING },
           narrative: { type: Type.STRING },
-          imageIds: { type: Type.ARRAY, items: { type: Type.STRING } },
         },
-        required: ["placeName", "location", "title", "narrative", "imageIds"],
+        required: ["stopId", "title", "narrative"],
       },
     },
     closingText: { type: Type.STRING },
@@ -122,7 +122,7 @@ export type InlineImage = {
   data: string;
 };
 
-export async function analyzeImages(images: InlineImage[], tripHint?: string | null): Promise<AnalysisResult> {
+export async function analyzeImages(images: InlineImage[], tripHint?: string | null): Promise<ObservationResult> {
   const parts: Array<Record<string, unknown>> = [{ text: IMAGE_ANALYSIS_USER(images.length, tripHint) }];
 
   for (const image of images) {
@@ -141,7 +141,7 @@ export async function analyzeImages(images: InlineImage[], tripHint?: string | n
     },
   });
 
-  return AnalysisResultSchema.parse(JSON.parse(textOf(response)));
+  return ObservationResultSchema.parse(JSON.parse(textOf(response)));
 }
 
 /* ------------------------------------------------------------------ */

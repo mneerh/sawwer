@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 
 import { JourneyImage } from "@/components/media/JourneyImage";
+import { formatDateRange } from "@/lib/datetime";
 import { useLanguage } from "@/lib/i18n/context";
 import type { Journey } from "@/lib/ai/schemas";
 
@@ -28,13 +29,9 @@ export function JourneyHero({ journey }: { journey: Journey }) {
     };
   }, []);
 
-  const date = journey.date
-    ? new Intl.DateTimeFormat(locale === "ar" ? "ar-SA" : "en-GB", {
-        day: "numeric",
-        month: "long",
-        year: "numeric",
-      }).format(new Date(journey.date))
-    : null;
+  // The trip's own dates, read from the photographs. A journey whose photos
+  // carried no date shows none rather than borrowing today's.
+  const date = formatDateRange(journey.date, journey.endDate, locale);
 
   return (
     <header className="relative h-[92vh] min-h-[34rem] overflow-hidden">

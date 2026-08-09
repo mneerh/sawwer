@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 
+import type { TripChronology } from "@/components/upload/CreateFlow";
+import { formatDayDate, formatDateRange, formatTime } from "@/lib/datetime";
 import { useLanguage } from "@/lib/i18n/context";
 import type { PreparedImage } from "@/lib/images";
 import type { DetectedPlace } from "@/lib/ai/schemas";
@@ -10,6 +12,7 @@ export function ReviewStops({
   places,
   photos,
   unplacedCount,
+  chronology,
   onChange,
   onConfirm,
   onBack,
@@ -17,11 +20,12 @@ export function ReviewStops({
   places: DetectedPlace[];
   photos: PreparedImage[];
   unplacedCount: number;
+  chronology: TripChronology;
   onChange: (places: DetectedPlace[]) => void;
   onConfirm: () => void;
   onBack: () => void;
 }) {
-  const { t } = useLanguage();
+  const { t, locale } = useLanguage();
   const [editing, setEditing] = useState<string | null>(null);
   const [newPlace, setNewPlace] = useState("");
 
@@ -47,10 +51,18 @@ export function ReviewStops({
         imageIds: [],
         confidence: 1,
         uncertain: false,
+        capturedAt: null,
+        displayTime: null,
+        date: null,
+        dayNumber: places[places.length - 1]?.dayNumber ?? 1,
+        timeSource: "upload_order",
       },
     ]);
     setNewPlace("");
   };
+
+  const tripDate = formatDateRange(chronology.tripStartDate, chronology.tripEndDate, locale);
+  const multiDay = chronology.dayCount > 1;
 
   return (
     <section className="mx-auto max-w-3xl px-5 py-24 sm:px-8 sm:py-28">
@@ -58,80 +70,123 @@ export function ReviewStops({
       <h1 className="mt-5 font-display text-[clamp(1.9rem,4.6vw,2.9rem)] leading-tight text-ink">
         {places.length > 0 ? t.review.title(places.length) : t.review.emptyTitle}
       </h1>
+
+      {/* The date comes from the photographs themselves, so it is stated up
+          front — this is the single most checkable thing on the screen. */}
+      {tripDate ? (
+        <p className="mt-4 font-display text-[1.3rem] text-green-deep">
+          {tripDate}
+          {multiDay && <span className="ms-3 text-[0.95rem] text-ink-faint">{t.review.days(chronology.dayCount)}</span>}
+        </p>
+      ) : (
+        places.length > 0 && <p className="mt-4 text-[0.9rem] text-ink-faint">{t.review.noDate}</p>
+      )}
+
       <p className="mt-4 font-serif text-[1rem] leading-[1.9] text-ink-soft">
         {places.length > 0 ? t.review.subtitle : t.review.emptyBody}
       </p>
 
       <ul className="mt-12 divide-y divide-sand/60 border-y border-sand/60">
-        {places.map((place, index) => (
-          <li key={place.id} className="flex items-center gap-4 py-4 sm:gap-5">
-            <span className="font-display text-[1.35rem] text-sand tabular">
-              {String(index + 1).padStart(2, "0")}
-            </span>
+        {places.map((place, index) => {
+          const previous = places[index - 1];
+          const startsDay = multiDay && place.dayNumber !== previous?.dayNumber;
+          const time = formatTime(place.capturedAt, locale);
 
-            <div className="flex -space-x-2 rtl:space-x-reverse" aria-hidden>
-              {place.imageIds.slice(0, 3).map((imageId) => {
-                const photo = photoFor(imageId);
-                return photo ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    key={imageId}
-                    src={photo.previewUrl}
-                    alt=""
-                    className="h-11 w-11 rounded-md border-2 border-shell object-cover"
-                  />
-                ) : null;
-              })}
-            </div>
-
-            <div className="min-w-0 flex-1">
-              {editing === place.id ? (
-                <input
-                  autoFocus
-                  value={place.name}
-                  onChange={(event) => rename(place.id, event.target.value)}
-                  onBlur={() => setEditing(null)}
-                  onKeyDown={(event) => {
-                    if (event.key === "Enter" || event.key === "Escape") setEditing(null);
-                  }}
-                  aria-label={t.review.rename}
-                  className="w-full border-b border-green bg-transparent pb-1 font-display text-[1.15rem] text-ink outline-none"
-                />
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => setEditing(place.id)}
-                  title={t.review.rename}
-                  className="block max-w-full truncate text-start font-display text-[1.15rem] text-ink transition-colors hover:text-green"
-                >
-                  {place.name}
-                </button>
+          return (
+            <li key={place.id}>
+              {startsDay && (
+                <p className="pt-6 pb-1 text-[0.78rem] uppercase tracking-[0.2em] text-clay">
+                  {t.review.dayLabel(place.dayNumber)}
+                  {formatDayDate(place.date, locale) && (
+                    <span className="ms-2 text-ink-faint normal-case tracking-normal">
+                      — {formatDayDate(place.date, locale)}
+                    </span>
+                  )}
+                </p>
               )}
 
-              <p className="mt-1 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[0.78rem] text-ink-faint">
-                {place.imageIds.length > 0 && <span>{t.review.photos(place.imageIds.length)}</span>}
-                {place.city && <span>· {place.city}</span>}
-                {place.uncertain && (
-                  <span className="rounded-full bg-gold/18 px-2 py-0.5 text-[0.7rem] text-clay">
-                    {t.review.uncertain}
-                  </span>
-                )}
-              </p>
-            </div>
+              <div className="flex items-center gap-4 py-4 sm:gap-5">
+                {/* Time replaces the ordinal: the sequence is the timestamps. */}
+                <span
+                  className={`w-[4.5rem] shrink-0 text-start font-display tabular ${
+                    time ? "text-[1.05rem] text-green-deep" : "text-[0.72rem] leading-tight text-ink-faint/70"
+                  }`}
+                >
+                  {time ?? t.review.noTime}
+                </span>
 
-            <button
-              type="button"
-              onClick={() => removePlace(place.id)}
-              aria-label={`${t.review.removePlace}: ${place.name}`}
-              className="shrink-0 rounded-full px-2.5 py-1.5 text-[0.85rem] text-ink-faint transition-colors hover:bg-terracotta/10 hover:text-terracotta"
-            >
-              ✕
-            </button>
-          </li>
-        ))}
+                <div className="flex -space-x-2 rtl:space-x-reverse" aria-hidden>
+                  {place.imageIds.slice(0, 3).map((imageId) => {
+                    const photo = photoFor(imageId);
+                    return photo ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        key={imageId}
+                        src={photo.previewUrl}
+                        alt=""
+                        className="h-11 w-11 rounded-md border-2 border-shell object-cover"
+                      />
+                    ) : null;
+                  })}
+                </div>
+
+                <div className="min-w-0 flex-1">
+                  {editing === place.id ? (
+                    <input
+                      autoFocus
+                      value={place.name}
+                      onChange={(event) => rename(place.id, event.target.value)}
+                      onBlur={() => setEditing(null)}
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter" || event.key === "Escape") setEditing(null);
+                      }}
+                      aria-label={t.review.rename}
+                      className="w-full border-b border-green bg-transparent pb-1 font-display text-[1.15rem] text-ink outline-none"
+                    />
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => setEditing(place.id)}
+                      title={t.review.rename}
+                      className={`block max-w-full truncate text-start font-display text-[1.15rem] transition-colors hover:text-green ${
+                        place.name ? "text-ink" : "text-ink-faint/80"
+                      }`}
+                    >
+                      {place.name || t.review.unnamedPlace}
+                    </button>
+                  )}
+
+                  <p className="mt-1 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[0.78rem] text-ink-faint">
+                    {place.imageIds.length > 0 && <span>{t.review.photos(place.imageIds.length)}</span>}
+                    {place.city && <span>· {place.city}</span>}
+                    {place.uncertain && (
+                      <span className="rounded-full bg-gold/18 px-2 py-0.5 text-[0.7rem] text-clay">
+                        {t.review.uncertain}
+                      </span>
+                    )}
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => removePlace(place.id)}
+                  aria-label={`${t.review.removePlace}: ${place.name || t.review.unnamedPlace}`}
+                  className="shrink-0 rounded-full px-2.5 py-1.5 text-[0.85rem] text-ink-faint transition-colors hover:bg-terracotta/10 hover:text-terracotta"
+                >
+                  ✕
+                </button>
+              </div>
+            </li>
+          );
+        })}
       </ul>
 
-      {unplacedCount > 0 && <p className="mt-4 text-[0.82rem] text-ink-faint">{t.review.unplaced(unplacedCount)}</p>}
+      <div className="mt-4 space-y-1">
+        {unplacedCount > 0 && <p className="text-[0.82rem] text-ink-faint">{t.review.unplaced(unplacedCount)}</p>}
+        {chronology.photosWithoutTimestamp > 0 && (
+          <p className="text-[0.82rem] text-ink-faint">{t.review.withoutTime(chronology.photosWithoutTimestamp)}</p>
+        )}
+      </div>
 
       <div className="mt-8 flex items-center gap-3">
         <input

@@ -14,7 +14,8 @@ const RequestSchema = z.object({
     .array(
       z.object({
         id: z.string(),
-        name: z.string().min(1).max(120),
+        // May be empty: a stop can be a real moment at an unidentified place.
+        name: z.string().max(120),
         city: z.string().max(120).nullable(),
         imageIds: z.array(z.string()),
       }),

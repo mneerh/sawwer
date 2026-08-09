@@ -14,6 +14,13 @@ import { saveImage, saveJourney } from "@/lib/storage/journeys";
 
 type Stage = "upload" | "processing" | "review";
 
+export type TripChronology = {
+  tripStartDate: string | null;
+  tripEndDate: string | null;
+  dayCount: number;
+  photosWithoutTimestamp: number;
+};
+
 export function CreateFlow() {
   const { t } = useLanguage();
   const router = useRouter();
@@ -29,6 +36,12 @@ export function CreateFlow() {
 
   const [places, setPlaces] = useState<DetectedPlace[]>([]);
   const [unplacedCount, setUnplacedCount] = useState(0);
+  const [chronology, setChronology] = useState<TripChronology>({
+    tripStartDate: null,
+    tripEndDate: null,
+    dayCount: 1,
+    photosWithoutTimestamp: 0,
+  });
   const analysesRef = useRef<ImageAnalysis[]>([]);
   const journeyIdRef = useRef<string>("");
 
@@ -53,9 +66,13 @@ export function CreateFlow() {
       try {
         const prepared: PreparedImage[] = [];
 
+        // uploadIndex is the last-resort ordering key, so it must reflect the
+        // photo's position across the whole selection, not just this batch.
+        let uploadIndex = photos.length;
         for (const file of accepted.slice(0, Math.max(0, room))) {
           try {
-            prepared.push(await prepareImage(file, createId("img")));
+            prepared.push(await prepareImage(file, createId("img"), uploadIndex));
+            uploadIndex++;
           } catch {
             problems.push(t.create.badType(file.name));
           }
@@ -74,7 +91,7 @@ export function CreateFlow() {
     setPhotos((current) => {
       const target = current.find((photo) => photo.imageId === imageId);
       if (target) URL.revokeObjectURL(target.previewUrl);
-      return current.filter((photo) => photo.imageId !== imageId);
+      return reindex(current.filter((photo) => photo.imageId !== imageId));
     });
   };
 
@@ -85,7 +102,9 @@ export function CreateFlow() {
       if (index < 0 || next < 0 || next >= current.length) return current;
       const reordered = [...current];
       [reordered[index], reordered[next]] = [reordered[next], reordered[index]];
-      return reordered;
+      // Manual reordering is an explicit statement of intent, so it updates the
+      // fallback key. It still cannot override a photo's real EXIF timestamp.
+      return reindex(reordered);
     });
   };
 
@@ -113,6 +132,9 @@ export function CreateFlow() {
             mimeType: photo.analysisMimeType,
             data: photo.analysisBase64,
           })),
+          // Read on-device from the original files. Only the fields the journey
+          // needs are sent — nothing else from the EXIF block leaves the browser.
+          metadata: photos.map((photo) => photo.metadata),
           tripHint: [tripName.trim(), destination.trim()].filter(Boolean).join(" — ") || null,
         }),
       });
@@ -124,11 +146,17 @@ export function CreateFlow() {
         detectedPlaces: DetectedPlace[];
         unplacedImageIds: string[];
         probableDestination: string | null;
-      };
+      } & TripChronology;
 
       analysesRef.current = data.analyses ?? [];
       setPlaces(data.detectedPlaces ?? []);
       setUnplacedCount(data.unplacedImageIds?.length ?? 0);
+      setChronology({
+        tripStartDate: data.tripStartDate ?? null,
+        tripEndDate: data.tripEndDate ?? null,
+        dayCount: data.dayCount ?? 1,
+        photosWithoutTimestamp: data.photosWithoutTimestamp ?? 0,
+      });
       if (!destination && data.probableDestination) setDestination(data.probableDestination);
       setStage("review");
     } catch (error) {
@@ -217,6 +245,7 @@ export function CreateFlow() {
         places={places}
         photos={photos}
         unplacedCount={unplacedCount}
+        chronology={chronology}
         onChange={setPlaces}
         onConfirm={buildJourney}
         onBack={() => setStage("upload")}
@@ -281,6 +310,11 @@ export function CreateFlow() {
       </div>
     </section>
   );
+}
+
+/** Keeps uploadIndex aligned with the visible order after add/remove/reorder. */
+function reindex(photos: PreparedImage[]): PreparedImage[] {
+  return photos.map((photo, index) => ({ ...photo, metadata: { ...photo.metadata, uploadIndex: index } }));
 }
 
 function Field({

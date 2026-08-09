@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { JourneyImage } from "@/components/media/JourneyImage";
 import { Reveal } from "@/components/ui/Reveal";
 import { DEMO_JOURNEY_ID } from "@/data/demo-journey";
+import { formatDateRange } from "@/lib/datetime";
 import { useLanguage } from "@/lib/i18n/context";
 import { deleteJourney, listJourneys } from "@/lib/storage/journeys";
 import type { Journey } from "@/lib/ai/schemas";
@@ -87,11 +88,7 @@ export function JourneyLibrary() {
                     <>
                       <span aria-hidden>·</span>
                       <time dateTime={journey.date}>
-                        {new Intl.DateTimeFormat(locale === "ar" ? "ar-SA" : "en-GB", {
-                          day: "numeric",
-                          month: "long",
-                          year: "numeric",
-                        }).format(new Date(journey.date))}
+                        {formatDateRange(journey.date, journey.endDate, locale)}
                       </time>
                     </>
                   )}

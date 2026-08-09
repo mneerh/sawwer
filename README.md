@@ -65,7 +65,8 @@ This matters more than any single feature:
 - **Tailwind CSS v4**
 - **Zod** for schema validation at every AI boundary
 - **@google/genai** — the current official Google Gen AI SDK
-- **Google Places API (New)** and **Google Maps Embed API** (both optional)
+- **Leaflet** + **OpenStreetMap** tiles for the journey map — no key, no billing
+- **Google Places API (New)** — optional, improves place names and coordinates
 - **IndexedDB** for local persistence of journeys and photos
 
 Thmanyah is the typeface throughout (sans, serif text, and serif display),
@@ -99,12 +100,13 @@ Copy `.env.example` to `.env.local`. Every variable is optional.
 | `GEMINI_API_KEY` | server only | App runs in demo mode |
 | `GOOGLE_PLACES_API_KEY` | server only | Falls back to a built-in gazetteer of Saudi heritage sites |
 | `GOOGLE_MAPS_API_KEY` | server only | Used as a fallback credential for Places |
-| `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` | **browser** | Journey renders its own illustrated map |
 
-Recommended setup: one Google Cloud project with *Generative Language API*,
-*Places API (New)* and *Maps Embed API* enabled. Use a **separate**,
-HTTP-referrer-restricted key for `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` — never reuse
-the server key in the browser.
+**The map needs no key at all.** It is OpenStreetMap raster tiles rendered with
+Leaflet — no Maps SDK, no Embed API, no billing account.
+
+Recommended setup: one Google Cloud project with *Generative Language API*
+enabled. *Places API (New)* is optional and only sharpens place names and
+coordinates.
 
 All Gemini and Places calls happen in server route handlers. No secret is ever
 sent to the client.
@@ -168,6 +170,24 @@ and writing.
 Persistence is deliberately local-only for the MVP. Replacing
 `src/lib/storage/journeys.ts` with a Supabase/Firebase implementation is the only
 change needed to move journeys off-device.
+
+## The map
+
+OpenStreetMap tiles through Leaflet, loaded client-side only (`ssr: false`) —
+Leaflet touches `window` at import time. Markers are `divIcon`s drawn from CSS
+rather than image assets, which also avoids Leaflet's broken default-icon paths
+under a bundler. Stops are plotted in chronological order, joined by a dashed
+route line, and the map fits its bounds to the trip automatically.
+
+Coordinates are never looked up by the map. They arrive already attached to each
+stop, in this order of preference:
+
+1. the photo's own **EXIF GPS**,
+2. **Google Places**, when a key is configured,
+3. the built-in **gazetteer** of Saudi heritage sites.
+
+A stop with no usable coordinates is simply not plotted — it keeps its place in
+the timeline.
 
 ## Language
 
