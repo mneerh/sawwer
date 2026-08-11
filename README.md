@@ -8,11 +8,7 @@ Sawwer reads the photos from a trip you've already taken and gives you back the
 journey — the places you walked through, in the order you actually walked them,
 with their history verified against real sources.
 
-<!--
-  Hero screenshot — reuses docs/images/journey.png (see the Screenshots
-  section below). Add that file and this renders automatically.
--->
-<img src="docs/images/journey.png" alt="Sawwer — an AI-reconstructed travel journey" width="100%" />
+<img src="docs/images/3 trip view.png" alt="Sawwer — an AI-reconstructed travel journey" width="100%" />
 
 [How it works](#how-it-works) · [Installation](#installation) · [Tech stack](#technology-stack)
 
@@ -237,42 +233,27 @@ flowchart TD
 
 ## Screenshots
 
-<!--
-  Add your screenshots to docs/images/ using the filenames below and they
-  will render automatically — no other changes needed.
--->
-
 ### Landing page
 
-<img src="docs/images/landing.png" alt="Sawwer landing page" width="100%" />
+<img src="docs/images/1 st screen.png" alt="Sawwer landing page" width="100%" />
 
 ### Upload
 
-<img src="docs/images/upload.png" alt="Uploading trip photos" width="100%" />
+<img src="docs/images/2 uplaod.png" alt="Uploading trip photos" width="100%" />
 
 ### Processing
 
-<img src="docs/images/processing.png" alt="AI processing screen" width="100%" />
+<img src="docs/images/2 Processing.png" alt="AI processing screen" width="100%" />
 
 ### Review
 
-<img src="docs/images/review.png" alt="Reviewing detected stops before generating the journey" width="100%" />
+<img src="docs/images/2 review.png" alt="Reviewing detected stops, grouped by day, before generating the journey" width="100%" />
 
 ### Journey
 
-<img src="docs/images/journey.png" alt="The generated, immersive journey" width="100%" />
+<img src="docs/images/3 trip view.png" alt="The generated, immersive journey — cinematic cover" width="100%" />
 
-### Interactive map
-
-<img src="docs/images/map.png" alt="Journey stops plotted on an OpenStreetMap route" width="100%" />
-
-### Journey library
-
-<img src="docs/images/library.png" alt="Personal library of saved journeys" width="100%" />
-
-### Mobile
-
-<img src="docs/images/mobile.png" alt="Sawwer on a mobile viewport" width="360" />
+<img src="docs/images/4 trip view.png" alt="A day within the generated journey, with narrative and a verified stop" width="100%" />
 
 ---
 
