@@ -8,7 +8,7 @@ Sawwer reads the photos from a trip you've already taken and gives you back the
 journey — the places you walked through, in the order you actually walked them,
 with their history verified against real sources.
 
-<img src="docs/images/3 trip view.png" alt="Sawwer — an AI-reconstructed travel journey" width="100%" />
+<img src="docs/images/1 st screen.png" alt="Sawwer — an AI-reconstructed travel journey" width="100%" />
 
 [How it works](#how-it-works) · [Installation](#installation) · [Tech stack](#technology-stack)
 
