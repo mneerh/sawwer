@@ -60,7 +60,6 @@ Facts are grounded in live search results, with sources shown.
 - [Screenshots](#screenshots)
 - [Installation](#installation)
 - [Environment variables](#environment-variables)
-- [Deployment](#deployment)
 - [Project structure](#project-structure)
 - [Future improvements](#future-improvements)
 - [Contributors](#contributors)
@@ -295,28 +294,17 @@ GEMINI_API_KEY=
 
 ---
 
-## Deployment
+## 🌐 Live Demo
 
-### Vercel
+Try the project online:
+**[sawwer.vercel.app] (https://sawwer.vercel.app)**
 
-Sawwer is a standard Next.js App Router project and deploys to Vercel with no
-special configuration:
+### Demo Flow
 
-1. Import the repository into Vercel
-2. Add any of the [environment variables](#environment-variables) you want live
-   (all optional)
-3. Deploy — Vercel detects the Next.js framework automatically
-
-### Local / self-hosted
-
-```bash
-npm install
-npm run build
-npm run start
-```
-
-Runs on any Node.js host. There is no database to provision — persistence is
-entirely client-side via IndexedDB.
+1. Upload your travel photos.
+2. Review the detected places.
+3. Generate your interactive journey.
+4. Explore the timeline and interactive map.
 
 ---
 
