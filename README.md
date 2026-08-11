@@ -1,200 +1,484 @@
-# Sawwer | صوِّر
+<div align="center">
 
-> صوِّر، ودع رحلتك تحكي.
-> Turn your travel photos into a story worth remembering.
+# صوِّر — Sawwer
 
-Sawwer is an AI-powered tourism memory experience. It takes the photos you already
-have — after the trip is over — and gives you back the journey: the places you
-walked through, in the order you walked them, with their verified history attached.
+**Turn your travel photos into a story worth remembering.**
 
-**صوِّر** is the imperative verb *"capture / take a photo"* — not صور (photos).
+Sawwer reads the photos from a trip you've already taken and gives you back the
+journey — the places you walked through, in the order you actually walked them,
+with their history verified against real sources.
+
+<!--
+  Hero screenshot — reuses docs/images/journey.png (see the Screenshots
+  section below). Add that file and this renders automatically.
+-->
+<img src="docs/images/journey.png" alt="Sawwer — an AI-reconstructed travel journey" width="100%" />
+
+[How it works](#how-it-works) · [Installation](#installation) · [Tech stack](#technology-stack)
+
+</div>
+
+<br />
+
+<table>
+<tr>
+<td width="25%" valign="top">
+
+**🧭 AI journey reconstruction**
+Gemini reads your photos and identifies the places in them.
+
+</td>
+<td width="25%" valign="top">
+
+**🕒 Real chronology**
+Order comes from each photo's own EXIF timestamp — never a guess.
+
+</td>
+<td width="25%" valign="top">
+
+**🗺️ Interactive map**
+Every stop plotted on OpenStreetMap, no API key required.
+
+</td>
+<td width="25%" valign="top">
+
+**📚 Verified history**
+Facts are grounded in live search results, with sources shown.
+
+</td>
+</tr>
+</table>
+
+<br />
 
 ---
 
-## The problem
+## Table of contents
 
-You come back from Diriyah, AlUla or Historic Jeddah with forty photos on your
-phone. Six months later you can't remember which building was which, what order
-the day happened in, or why that wall mattered. The photos survive; the journey
-doesn't.
+- [Project overview](#project-overview)
+- [Features](#features)
+- [How it works](#how-it-works)
+- [AI architecture](#ai-architecture)
+- [Technology stack](#technology-stack)
+- [Screenshots](#screenshots)
+- [Installation](#installation)
+- [Environment variables](#environment-variables)
+- [Deployment](#deployment)
+- [Project structure](#project-structure)
+- [Design decisions](#design-decisions)
+- [Future improvements](#future-improvements)
+- [Contributors](#contributors)
+- [License](#license)
 
-## The solution
+---
 
-Upload the photos. Sawwer reads them, identifies the landmarks, verifies their
-history against real sources, orders them into a single day, and renders the
-result as an interactive journey you scroll through — photo essay, timeline and
-heritage guide in one.
+## Project overview
 
-## Core user flow
+**Sawwer** (صوِّر — the Arabic imperative *"capture"*) is an AI-powered tourism
+memory experience built for Saudi heritage travel. It is designed for the moment
+*after* the trip: you're home, your gallery has forty photos from Diriyah or AlUla
+or Historic Jeddah, and you can no longer remember which building was which, what
+order the day happened in, or why any of it mattered.
 
-```
-Landing → Create journey → Upload photos → AI processing
-       → Review detected stops → Build → Immersive journey → Ask about my trip
+Sawwer solves this by reconstructing the journey from the photos alone —
+identifying the landmarks, verifying their history against real sources, ordering
+everything by when it was actually captured, and rendering the result as an
+interactive story you scroll through.
+
+### Why this isn't a photo gallery
+
+A gallery shows you images. Sawwer tells you a *story*:
+
+| A gallery | Sawwer |
+|---|---|
+| Grid of thumbnails | A scrolling, narrated journey |
+| No context | Landmark names, heritage details, verified facts |
+| No order | Chronological timeline from real capture data |
+| No place | Every stop plotted on an interactive map |
+| Static | Answers questions about your own trip |
+
+### The experience
+
+A traveller opens Sawwer, drops in their photos, and watches a narrated
+processing sequence read and understand each one. They confirm a short review of
+the detected stops, and then step into a cinematic, scrollable journey — hero
+cover, one immersive section per stop, a map of the whole trip, and a closing
+screen with the story's shape in numbers. From there, they can ask the journey
+questions directly: *"Where did I go first?"*, *"What's the story behind this
+building?"*
+
+---
+
+## Features
+
+- 🧠 **AI-powered journey reconstruction** — Gemini's multimodal understanding reads every photo and identifies landmarks, heritage elements, and visible context
+- 🕒 **Automatic chronological timeline** — stops are ordered by when the photos were actually taken, not by upload order or guesswork
+- 📷 **EXIF-based photo ordering** — real capture timestamps, extracted client-side, drive the entire sequence
+- 🗺️ **Interactive map** — every stop plotted on OpenStreetMap with a chronological route line, no billing account needed
+- ✍️ **AI-generated storytelling** — a warm, literary narrative written around your actual photos, kept strictly separate from verified fact
+- 🌐 **Multilingual interface** — Arabic-first with full RTL, English available from the header
+- 💾 **Offline local storage** — journeys and photos live in the browser via IndexedDB; nothing is uploaded except what's needed for analysis
+- 📍 **Smart place recognition** — function calling resolves landmark names to official names and coordinates
+- 📚 **Historical facts with citations** — every verified fact is grounded in a live search result, source included
+- 🗂️ **Journey library** — every trip you build is saved and revisitable, like a personal travel archive
+- ❓ **Ask about your trip** — a contextual Q&A panel that answers only from your journey's own data
+- 🎭 **Honest about uncertainty** — low-confidence places are marked unconfirmed rather than asserted; a demo mode makes the whole flow explorable without any credentials
+
+---
+
+## How it works
+
+1. **Upload** — drop in the photos from your trip (up to 12, JPG/PNG/WEBP)
+2. **EXIF extraction** — capture timestamps and GPS are read client-side, from the original files, before anything is compressed
+3. **Gemini analysis** — each photo is read for landmarks, heritage elements, and visual context
+4. **Chronological sort** — photos are ordered by their real capture time, with a deterministic fallback chain for photos with partial or missing data
+5. **Grouping** — photos taken at the same place and time are merged into a single stop
+6. **Review** — a quick screen shows the detected stops and their order before anything is generated, so you can rename or remove a stop
+7. **Verification** — place names are resolved via function calling, and one historical fact per stop is grounded in live search results
+8. **Journey generation** — Gemini writes the narrative for each stop, strictly separated from the verified facts
+9. **Interactive map** — every located stop is plotted on OpenStreetMap, connected by a chronological route
+10. **Ask about your trip** — a floating panel answers questions using only your journey's own data
+
+```mermaid
+flowchart LR
+    Upload([📤 Upload]) --> EXIF[🕒 EXIF Extraction]
+    EXIF --> Gemini[🧠 Gemini Analysis]
+    Gemini --> Sort[📊 Chronological Sort]
+    Sort --> Review[✅ Review]
+    Review --> Verify[🔍 Verification & Grounding]
+    Verify --> Journey[📖 Journey Generation]
+    Journey --> Map[🗺️ Interactive Map]
+    Map --> Library[📚 Journey Library]
+    Journey --> Ask[💬 Ask About Trip]
 ```
 
 ---
 
-## Gemini capabilities used
+## AI architecture
 
-| Capability | Where | What it does |
+Sawwer's core design principle: **the language model never decides chronology.**
+Order is computed deterministically from each photo's own metadata before Gemini
+is ever called for narrative, and the model's response schema for journey
+composition contains no ordering, grouping, or image-assignment fields — only
+`{ stopId, title, narrative }`. A model response cannot reorder a timestamped
+trip because the data it returns has no way to express an order.
+
+| Capability | What it does | Where |
 |---|---|---|
-| **Multimodal understanding** | `src/lib/ai/gemini.ts` → `analyzeImages` | Reads every photo and returns place candidates, heritage elements, visible signage, time of day and an honest confidence score. |
-| **Google Search grounding** | `groundPlaceFact` | Retrieves one verifiable historical fact per place. Citations are read from `groundingMetadata`, not from the model's prose — a fact without retrieved sources is never marked verified. |
-| **Function calling** | `resolvePlaces` + `getPlaceDetails` declaration | Gemini decides how to name each place and calls our `getPlaceDetails` tool; the server executes it against Google Places and feeds the result back. |
-| **Structured output** | `composeJourney` | The journey is generated against a typed `responseSchema` and validated with Zod. No prose parsing. |
+| **Multimodal understanding** | Reads every photo and returns place candidates, heritage elements, and an honest confidence score | `analyzeImages` |
+| **Structured outputs** | Every AI response is generated against a typed JSON schema and re-validated with Zod — no prose parsing | all Gemini calls |
+| **Function calling** | Gemini resolves place names via a `getPlaceDetails` tool; the server executes the lookup and returns real data | `resolvePlaces` |
+| **Google Search grounding** | Historical facts are retrieved from live search results; citations come from the grounding metadata, never the model's own claim | `groundPlaceFact` |
+| **EXIF extraction** | Capture timestamps and GPS are read client-side from the original file, before any compression | `metadata.ts` |
+| **OpenStreetMap** | The journey map renders on free OSM tiles via Leaflet — no API key, no billing | `LeafletJourneyMap.tsx` |
+| **Local storage** | Journeys and photos persist in IndexedDB; nothing leaves the device except what analysis needs | `storage/journeys.ts` |
 
-### How uncertainty is handled
+**How uncertainty is handled:**
 
-This matters more than any single feature:
+- A landmark is only named when the model is reasonably confident; low-confidence
+  places are marked **غير مؤكد** (unconfirmed) rather than asserted
+- The narrative is explicitly forbidden from containing dates, dynasties, or
+  historical claims — those live only in the separate, visually distinct
+  verified-fact block
+- A fact is marked verified **only** when Google Search grounding actually
+  returned citations; everything else renders without one
+- Stop IDs, coordinates, source URLs, and map links are attached by the
+  application's own code after generation — a hallucinated URL can never reach
+  the page
 
-- The model is instructed never to name a landmark it isn't reasonably sure of.
-  Low-confidence places are surfaced as **غير مؤكد** on the review screen and the
-  journey page instead of being asserted.
-- The **narrative** is explicitly forbidden from containing dates, dynasties or
-  historical claims. Those live only in the separate verified-fact block.
-- `verifiedFact` is populated **only** when Google Search grounding returned
-  citations. Everything else renders without one.
-- Stop ids, coordinates, source URLs and map links are attached by our own code
-  after generation — so a hallucinated URL can never reach the page.
+```mermaid
+flowchart TD
+    subgraph Client["Browser"]
+        A[Photos] --> B[EXIF + GPS extraction]
+        B --> C[Compress & encode]
+    end
 
----
+    subgraph Server["Server-only"]
+        D[Gemini: multimodal analysis]
+        E[Deterministic chronological sort]
+        F[Gemini: function calling → place details]
+        G[Gemini: Google Search grounding]
+        H[Gemini: structured narrative]
+    end
 
-## Tech stack
+    subgraph Storage["Persistence"]
+        I[(IndexedDB)]
+    end
 
-- **Next.js 16** (App Router) + **React 19** + **TypeScript**
-- **Tailwind CSS v4**
-- **Zod** for schema validation at every AI boundary
-- **@google/genai** — the current official Google Gen AI SDK
-- **Leaflet** + **OpenStreetMap** tiles for the journey map — no key, no billing
-- **Google Places API (New)** — optional, improves place names and coordinates
-- **IndexedDB** for local persistence of journeys and photos
-
-Thmanyah is the typeface throughout (sans, serif text, and serif display),
-self-hosted from `public/fonts` via `@font-face`.
-
----
-
-## Running locally
-
-```bash
-npm install
+    C -->|base64, analysis-sized| D
+    D --> E
+    E --> F
+    F --> G
+    G --> H
+    H --> J[Assembled Journey]
+    J --> I
+    I --> K[Journey page + Map]
 ```
 
+---
+
+## Technology stack
+
+| Category | Technology |
+|---|---|
+| **Frontend** | Next.js 16 (App Router), React 19, TypeScript |
+| **Backend** | Next.js Route Handlers (Node.js runtime) |
+| **AI** | Google Gemini API via `@google/genai` — multimodal, structured output, function calling, Search grounding |
+| **Maps** | Leaflet + OpenStreetMap (no API key required) |
+| **Places** | Google Places API (New) — optional, with an offline gazetteer fallback |
+| **Styling** | Tailwind CSS v4 (CSS-first config), self-hosted Thmanyah typeface |
+| **Validation** | Zod — schema validation at every AI and API boundary |
+| **Storage** | IndexedDB (client-side, no backend database) |
+| **EXIF parsing** | exifr |
+| **Deployment** | Vercel (or any Node.js host) |
+| **Tooling** | ESLint, TypeScript strict mode |
+
+---
+
+## Screenshots
+
+<!--
+  Add your screenshots to docs/images/ using the filenames below and they
+  will render automatically — no other changes needed.
+-->
+
+### Landing page
+
+<img src="docs/images/landing.png" alt="Sawwer landing page" width="100%" />
+
+### Upload
+
+<img src="docs/images/upload.png" alt="Uploading trip photos" width="100%" />
+
+### Processing
+
+<img src="docs/images/processing.png" alt="AI processing screen" width="100%" />
+
+### Review
+
+<img src="docs/images/review.png" alt="Reviewing detected stops before generating the journey" width="100%" />
+
+### Journey
+
+<img src="docs/images/journey.png" alt="The generated, immersive journey" width="100%" />
+
+### Interactive map
+
+<img src="docs/images/map.png" alt="Journey stops plotted on an OpenStreetMap route" width="100%" />
+
+### Journey library
+
+<img src="docs/images/library.png" alt="Personal library of saved journeys" width="100%" />
+
+### Mobile
+
+<img src="docs/images/mobile.png" alt="Sawwer on a mobile viewport" width="360" />
+
+---
+
+## Installation
+
 ```bash
+git clone https://github.com/mneerh/sawwer.git
+cd sawwer
+npm install
 npm run dev
 ```
 
-Open http://localhost:3000. **It works with no configuration at all** — see
-Demo mode below.
+Open [http://localhost:3000](http://localhost:3000). **The app works with no
+configuration at all** — see [Demo mode](#demo-mode) below.
 
 ```bash
-npm run build
+npm run build   # production build
+npm run start   # serve the production build
+npm run lint    # ESLint
 ```
+
+### Demo mode
+
+Demo mode is not a mock of the API — it's a separate, clearly-labelled content
+path, triggered automatically whenever `GEMINI_API_KEY` is absent. Demo journeys
+carry a visible **محتوى عرض توضيحي** badge and are never presented as live AI
+output. The sample journey (*يوم في الدرعية* — "A day in Diriyah") is always
+available at `/journey/demo-diriyah`, and its illustrations are inline SVG, so
+the demo needs no assets and no network connection.
+
+---
 
 ## Environment variables
 
-Copy `.env.example` to `.env.local`. Every variable is optional.
+Copy `.env.example` to `.env.local`. **Every variable is optional** — the app
+runs fully in demo mode with all of them left empty.
 
-| Variable | Exposure | Effect when missing |
-|---|---|---|
-| `GEMINI_API_KEY` | server only | App runs in demo mode |
-| `GOOGLE_PLACES_API_KEY` | server only | Falls back to a built-in gazetteer of Saudi heritage sites |
-| `GOOGLE_MAPS_API_KEY` | server only | Used as a fallback credential for Places |
+```env
+GEMINI_API_KEY=
+GOOGLE_PLACES_API_KEY=
+GOOGLE_MAPS_API_KEY=
+```
 
-**The map needs no key at all.** It is OpenStreetMap raster tiles rendered with
-Leaflet — no Maps SDK, no Embed API, no billing account.
+| Variable | Required? | Used where | Purpose |
+|---|---|---|---|
+| `GEMINI_API_KEY` | Optional | Server only | Enables multimodal analysis, function calling, Search grounding, and structured journey generation. Without it, the app serves clearly-labelled demo content. |
+| `GOOGLE_PLACES_API_KEY` | Optional | Server only | Resolves a landmark name to an official name, address, and coordinates via Places API (New). Falls back to a small built-in gazetteer of Saudi heritage sites when absent. |
+| `GOOGLE_MAPS_API_KEY` | Optional | Server only | Read only as a fallback credential for Places if you prefer one key for both APIs. |
 
-Recommended setup: one Google Cloud project with *Generative Language API*
-enabled. *Places API (New)* is optional and only sharpens place names and
-coordinates.
+**The map itself needs no key of any kind.** It's OpenStreetMap raster tiles
+rendered with Leaflet — no Maps SDK, no Embed API, no billing account.
 
 All Gemini and Places calls happen in server route handlers. No secret is ever
 sent to the client.
 
-## Demo mode
+---
 
-Demo mode is **not** a mock of the API — it is a separate, clearly-labelled
-content path:
+## Deployment
 
-- Triggered automatically when `GEMINI_API_KEY` is absent (`/api/config` reports
-  the live state).
-- Demo journeys carry `mode: "demo"` and render a visible **محتوى عرض توضيحي**
-  badge plus an explanatory note at the end of the journey.
-- Sample content lives only in `src/data/demo-journey.ts`, whose `verifiedFact`
-  strings are marked in-file as hand-written placeholders drawn from the linked
-  official sources — they are not passed off as grounded model output.
-- Uploading your own photos in demo mode still works: your photos are used, with
-  the sample Diriyah narrative wrapped around them.
+### Vercel
 
-The sample journey (*يوم في الدرعية*) is always available at
-`/journey/demo-diriyah`. Its photographs are illustrated SVG scenes, so the demo
-needs no assets and no network.
+Sawwer is a standard Next.js App Router project and deploys to Vercel with no
+special configuration:
+
+1. Import the repository into Vercel
+2. Add any of the [environment variables](#environment-variables) you want live
+   (all optional)
+3. Deploy — Vercel detects the Next.js framework automatically
+
+### Local / self-hosted
+
+```bash
+npm install
+npm run build
+npm run start
+```
+
+Runs on any Node.js host. There is no database to provision — persistence is
+entirely client-side via IndexedDB.
 
 ---
 
-## Routes
-
-| Route | Purpose |
-|---|---|
-| `/` | Landing |
-| `/create` | Upload → processing → review (single stateful flow) |
-| `/journey/[id]` | The immersive journey |
-| `/journeys` | Personal journey library |
-| `/api/analyze` | Multimodal analysis → detected places |
-| `/api/journey` | Function calling + grounding + structured composition |
-| `/api/ask` | Scoped Q&A over one journey |
-| `/api/config` | Reports which capabilities are live |
-
-## Architecture
+## Project structure
 
 ```
-src/
-  app/                    routes + API route handlers
-  components/
-    layout/  upload/  journey/  map/  media/  ui/
-  lib/
-    ai/       gemini.ts  prompts.ts  schemas.ts  pipeline.ts  demo-answers.ts
-    google/   places.ts  maps.ts
-    storage/  db.ts  journeys.ts        (IndexedDB — swap this to add a backend)
-    i18n/     context.tsx  dictionary.ts
-    images.ts
-  data/       demo-journey.ts
-public/fonts/ Thmanyah woff2 + license
+sawwer/
+├── src/
+│   ├── app/                     Routes and API route handlers
+│   │   ├── api/
+│   │   │   ├── analyze/         Multimodal analysis → detected places
+│   │   │   ├── journey/         Function calling + grounding + composition
+│   │   │   ├── ask/             Scoped Q&A over one journey
+│   │   │   └── config/          Reports which capabilities are live
+│   │   ├── create/               Upload → processing → review flow
+│   │   ├── journey/[id]/         The immersive journey page
+│   │   └── journeys/             Personal journey library
+│   ├── components/
+│   │   ├── layout/               Header, footer, logo
+│   │   ├── upload/                The create flow (dropzone, review, processing)
+│   │   ├── journey/               The journey experience (hero, stops, ask panel)
+│   │   ├── map/                   Leaflet + OpenStreetMap integration
+│   │   ├── media/                 Image resolution (demo / stored / direct)
+│   │   └── ui/                    Shared primitives (scroll reveal, etc.)
+│   ├── lib/
+│   │   ├── ai/                    gemini.ts, prompts.ts, schemas.ts, pipeline.ts
+│   │   ├── google/                Places API + keyless Maps deep links
+│   │   ├── storage/                IndexedDB persistence layer
+│   │   ├── i18n/                   Arabic/English dictionary + context
+│   │   ├── chronology.ts           Deterministic sort, day-splitting, grouping
+│   │   ├── metadata.ts             EXIF extraction
+│   │   └── images.ts               Client-side resize/compress pipeline
+│   └── data/
+│       └── demo-journey.ts         Hand-written demo content, clearly labelled
+├── public/
+│   └── fonts/                     Self-hosted Thmanyah typeface
+└── docs/
+    └── images/                     Screenshots referenced in this README
 ```
 
-The AI pipeline is split into stages so the processing screen can report **real**
-progress rather than a fake percentage: `/api/analyze` covers reading the photos
-and recognising places, `/api/journey` covers grounding, verification, ordering
-and writing.
+**Key folders:**
 
-Persistence is deliberately local-only for the MVP. Replacing
-`src/lib/storage/journeys.ts` with a Supabase/Firebase implementation is the only
-change needed to move journeys off-device.
-
-## The map
-
-OpenStreetMap tiles through Leaflet, loaded client-side only (`ssr: false`) —
-Leaflet touches `window` at import time. Markers are `divIcon`s drawn from CSS
-rather than image assets, which also avoids Leaflet's broken default-icon paths
-under a bundler. Stops are plotted in chronological order, joined by a dashed
-route line, and the map fits its bounds to the trip automatically.
-
-Coordinates are never looked up by the map. They arrive already attached to each
-stop, in this order of preference:
-
-1. the photo's own **EXIF GPS**,
-2. **Google Places**, when a key is configured,
-3. the built-in **gazetteer** of Saudi heritage sites.
-
-A stop with no usable coordinates is simply not plotted — it keeps its place in
-the timeline.
-
-## Language
-
-Arabic-first with full RTL. English is available from the header and switches the
-interface to LTR. Generated journey *content* stays in the language it was
-written in.
+- **`app/`** — routing and HTTP only; every handler validates input, delegates to
+  `lib/ai/pipeline.ts`, and responds
+- **`lib/ai/`** — the only place the model is spoken to; prompts are isolated
+  from the calls that use them
+- **`lib/chronology.ts`** — pure, dependency-free, deterministic logic that
+  decides the shape of every journey before Gemini writes a word
+- **`lib/storage/`** — the entire persistence layer; swapping this module for a
+  real backend is the only change needed to make journeys shareable
 
 ---
 
-Repository: https://github.com/mneerh/sawwer
+## Design decisions
+
+**Why EXIF drives chronology, not the model.**
+Asking a language model to infer the order of a trip from image content is
+guesswork — it gets golden-hour photos wrong, mistakes revisits for new stops,
+and offers no way to verify its reasoning. Sawwer instead reads each photo's
+`DateTimeOriginal` from EXIF, client-side, and sorts deterministically. The
+model's journey-composition schema has no field for order, grouping, or image
+assignment — it receives stops that are already sequenced and simply writes
+about them.
+
+**Why OpenStreetMap replaced Google Maps.**
+The map originally used the Google Maps Embed API, which requires a
+browser-exposed key tied to a billing account — a hard dependency on a credit
+card for a project meant to run anywhere with zero setup. OpenStreetMap tiles
+rendered through Leaflet need no key, no SDK, and no billing account, so the
+map works identically for every clone of this repository.
+
+**Why journeys are stored locally.**
+There is no backend database in this MVP. Journeys and photos live in
+IndexedDB, so nothing about a trip leaves the device except the downscaled
+image sent for analysis. The storage layer is isolated behind one module
+specifically so a real backend can be dropped in without touching anything
+else.
+
+**Why structured outputs.**
+Every AI response that needs to be machine-readable is generated against a
+typed JSON schema and re-validated with Zod before it's trusted. There is no
+regex-parsing of free-form model text anywhere in the pipeline — a malformed
+response fails loudly instead of rendering a broken journey.
+
+**How function calling improves accuracy.**
+Rather than asking Gemini to *guess* a landmark's coordinates from memory, the
+model calls a `getPlaceDetails` tool; the server executes a real lookup against
+Google Places (or an offline gazetteer) and returns verified data. The model
+never has the option to fabricate a coordinate.
+
+**How grounding reduces hallucination.**
+Historical facts are generated with the Google Search grounding tool enabled,
+and a fact is marked "verified" only when the grounding metadata actually
+contains citations. Prose alone — without a retrieved source — is discarded
+rather than shown as fact.
+
+---
+
+## Future improvements
+
+- Shared, shareable journey links (requires moving persistence off-device)
+- Cloud synchronization across devices
+- Video clip support alongside photos
+- Improved place recognition for less iconic landmarks
+- Collaborative trips (multiple contributors to one journey)
+- AI-generated trip summaries across multiple journeys
+
+---
+
+## Contributors
+
+Developed by:
+
+### Muneera Alsaeed
+
+GitHub: [https://github.com/mneerh](https://github.com/mneerh)
+
+### Sara Bin Zuryban
+
+GitHub: [https://github.com/sarasultanz](https://github.com/sarasultanz)
+
+---
+
+## License
+
+All rights reserved © Muneera Alsaeed & Sara Bin Zuryban.
+
+This repository is provided for demonstration purposes only. No part of this
+project may be copied, modified, or redistributed without prior permission from
+the authors.
