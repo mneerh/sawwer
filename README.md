@@ -10,8 +10,9 @@ with their history verified against real sources.
 
 <img src="docs/images/1 st screen.png" alt="Sawwer — an AI-reconstructed travel journey" width="100%" />
 
-[How it works](#how-it-works) · [Installation](#installation) · [Tech stack](#technology-stack)
-
+<p align="center">
+  🌐 <a href="https://sawwer.vercel.app"><strong>Live Demo</strong></a>
+</p>
 </div>
 
 <br />
@@ -61,7 +62,6 @@ Facts are grounded in live search results, with sources shown.
 - [Environment variables](#environment-variables)
 - [Deployment](#deployment)
 - [Project structure](#project-structure)
-- [Design decisions](#design-decisions)
 - [Future improvements](#future-improvements)
 - [Contributors](#contributors)
 - [License](#license)
@@ -288,26 +288,10 @@ the demo needs no assets and no network connection.
 
 ## Environment variables
 
-Copy `.env.example` to `.env.local`. **Every variable is optional** — the app
-runs fully in demo mode with all of them left empty.
-
+Copy `.env.example` to `.env.local`. 
 ```env
 GEMINI_API_KEY=
-GOOGLE_PLACES_API_KEY=
-GOOGLE_MAPS_API_KEY=
 ```
-
-| Variable | Required? | Used where | Purpose |
-|---|---|---|---|
-| `GEMINI_API_KEY` | Optional | Server only | Enables multimodal analysis, function calling, Search grounding, and structured journey generation. Without it, the app serves clearly-labelled demo content. |
-| `GOOGLE_PLACES_API_KEY` | Optional | Server only | Resolves a landmark name to an official name, address, and coordinates via Places API (New). Falls back to a small built-in gazetteer of Saudi heritage sites when absent. |
-| `GOOGLE_MAPS_API_KEY` | Optional | Server only | Read only as a fallback credential for Places if you prefer one key for both APIs. |
-
-**The map itself needs no key of any kind.** It's OpenStreetMap raster tiles
-rendered with Leaflet — no Maps SDK, no Embed API, no billing account.
-
-All Gemini and Places calls happen in server route handlers. No secret is ever
-sent to the client.
 
 ---
 
@@ -386,51 +370,6 @@ sawwer/
 
 ---
 
-## Design decisions
-
-**Why EXIF drives chronology, not the model.**
-Asking a language model to infer the order of a trip from image content is
-guesswork — it gets golden-hour photos wrong, mistakes revisits for new stops,
-and offers no way to verify its reasoning. Sawwer instead reads each photo's
-`DateTimeOriginal` from EXIF, client-side, and sorts deterministically. The
-model's journey-composition schema has no field for order, grouping, or image
-assignment — it receives stops that are already sequenced and simply writes
-about them.
-
-**Why OpenStreetMap replaced Google Maps.**
-The map originally used the Google Maps Embed API, which requires a
-browser-exposed key tied to a billing account — a hard dependency on a credit
-card for a project meant to run anywhere with zero setup. OpenStreetMap tiles
-rendered through Leaflet need no key, no SDK, and no billing account, so the
-map works identically for every clone of this repository.
-
-**Why journeys are stored locally.**
-There is no backend database in this MVP. Journeys and photos live in
-IndexedDB, so nothing about a trip leaves the device except the downscaled
-image sent for analysis. The storage layer is isolated behind one module
-specifically so a real backend can be dropped in without touching anything
-else.
-
-**Why structured outputs.**
-Every AI response that needs to be machine-readable is generated against a
-typed JSON schema and re-validated with Zod before it's trusted. There is no
-regex-parsing of free-form model text anywhere in the pipeline — a malformed
-response fails loudly instead of rendering a broken journey.
-
-**How function calling improves accuracy.**
-Rather than asking Gemini to *guess* a landmark's coordinates from memory, the
-model calls a `getPlaceDetails` tool; the server executes a real lookup against
-Google Places (or an offline gazetteer) and returns verified data. The model
-never has the option to fabricate a coordinate.
-
-**How grounding reduces hallucination.**
-Historical facts are generated with the Google Search grounding tool enabled,
-and a fact is marked "verified" only when the grounding metadata actually
-contains citations. Prose alone — without a retrieved source — is discarded
-rather than shown as fact.
-
----
-
 ## Future improvements
 
 - Shared, shareable journey links (requires moving persistence off-device)
@@ -446,13 +385,10 @@ rather than shown as fact.
 
 Developed by:
 
-### Muneera Alsaeed
+### [Muneera Alsaeed](https://github.com/mneerh)
 
-GitHub: [https://github.com/mneerh](https://github.com/mneerh)
+### [Sara Bin Zuryban](https://github.com/sarasultanz)
 
-### Sara Bin Zuryban
-
-GitHub: [https://github.com/sarasultanz](https://github.com/sarasultanz)
 
 ---
 
